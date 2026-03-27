@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const [year, setYear] = useState<number>(2568);
   const [term, setTerm] = useState<string>("สรุปสองภาคเรียน");
   const [subjectType, setSubjectType] = useState<string>("all");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
   
   const [data, setData] = useState<AcademicData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +74,35 @@ export default function DashboardPage() {
     }
   }, [year, term, user]);
 
+  // Derive available grade levels from fetched data
+  const gradeLevels = useMemo(() => {
+    const levels = new Set<string>();
+    data.forEach(d => levels.add(d.grade_level));
+    return Array.from(levels).sort();
+  }, [data]);
+
+  // Helper: check if a document matches the grade filter
+  const matchesGradeFilter = (gradeLevel: string): boolean => {
+    if (gradeFilter === "all") return true;
+    if (gradeFilter === "lower") {
+      // ม.ต้น = ม.1, ม.2, ม.3
+      const gl = gradeLevel;
+      if (["ม.1","ม.2","ม.3","ม1","ม2","ม3"].some(g => gl.includes(g.replace("ม.","ม")) || gl === g)) return true;
+      // flexible fallback
+      if ((gl.includes("1") || gl.includes("2") || gl.includes("3")) && !gl.includes("4") && !gl.includes("5") && !gl.includes("6")) return true;
+      return false;
+    }
+    if (gradeFilter === "upper") {
+      // ม.ปลาย = ม.4, ม.5, ม.6
+      const gl = gradeLevel;
+      if (["ม.4","ม.5","ม.6","ม4","ม5","ม6"].some(g => gl.includes(g.replace("ม.","ม")) || gl === g)) return true;
+      if ((gl.includes("4") || gl.includes("5") || gl.includes("6")) && !gl.includes("1") && !gl.includes("2") && !gl.includes("3")) return true;
+      return false;
+    }
+    // specific grade level
+    return gradeLevel === gradeFilter;
+  };
+
   const stats = useMemo(() => {
     let totalSubjects = 0;
     let totalStudents = 0;
@@ -83,6 +113,7 @@ export default function DashboardPage() {
     let sumGPACredits = 0;
 
     data.forEach(d => {
+      if (!matchesGradeFilter(d.grade_level)) return;
       d.subjects.forEach(sub => {
         if (subjectType !== "all" && sub.type !== subjectType) return;
         
@@ -110,12 +141,14 @@ export default function DashboardPage() {
       totalSubjects,
       totalStudents
     };
-  }, [data, subjectType]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, subjectType, gradeFilter]);
 
   const chartData = useMemo(() => {
      const areaMap: Record<string, any> = {};
      
      data.forEach(d => {
+       if (!matchesGradeFilter(d.grade_level)) return;
        d.subjects.forEach(sub => {
          if (subjectType !== "all" && sub.type !== subjectType) return;
          
@@ -158,12 +191,22 @@ export default function DashboardPage() {
      }));
      
      return { barData, radarData };
-  }, [data, subjectType]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, subjectType, gradeFilter]);
+
+  // Get filter label for filename
+  const getFilterLabel = () => {
+    let label = `${year}_${term}`;
+    if (gradeFilter !== "all") label += `_${gradeFilter === "lower" ? "ม.ต้น" : gradeFilter === "upper" ? "ม.ปลาย" : gradeFilter}`;
+    if (subjectType !== "all") label += `_${subjectType}`;
+    return label;
+  };
 
   const handleExportExcel = () => {
     import('xlsx').then(XLSX => {
       const rows: any[] = [];
       data.forEach(d => {
+        if (!matchesGradeFilter(d.grade_level)) return;
         d.subjects.forEach(sub => {
            if (subjectType !== "all" && sub.type !== subjectType) return;
            const gc = sub.grades_count;
@@ -199,7 +242,7 @@ export default function DashboardPage() {
 
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Academic Stats");
-      XLSX.writeFile(workbook, `สรุปผลการเรียน_${year}_ภาค${term}.xlsx`);
+      XLSX.writeFile(workbook, `สรุปผลการเรียน_${getFilterLabel()}.xlsx`);
     });
   };
 
@@ -237,23 +280,35 @@ export default function DashboardPage() {
             </select>
           </div>
           <select 
-             value={subjectType}
-             onChange={(e) => setSubjectType(e.target.value)}
-             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors"
-          >
-            <option value="all">ทุกประเภทวิชา</option>
-            <option value="พื้นฐาน">เฉพาะวิชาพื้นฐาน</option>
-            <option value="เพิ่มเติม">เฉพาะวิชาเพิ่มเติม</option>
-          </select>
+              value={gradeFilter}
+              onChange={(e) => setGradeFilter(e.target.value)}
+              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors appearance-none"
+           >
+             <option value="all">ทุกระดับชั้น</option>
+             <option value="lower">ม.ต้น (ม.1-3)</option>
+             <option value="upper">ม.ปลาย (ม.4-6)</option>
+             {gradeLevels.map(gl => (
+               <option key={gl} value={gl}>{gl}</option>
+             ))}
+           </select>
+          <select 
+              value={subjectType}
+              onChange={(e) => setSubjectType(e.target.value)}
+              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors appearance-none"
+           >
+             <option value="all">ทุกประเภทวิชา</option>
+             <option value="พื้นฐาน">เฉพาะวิชาพื้นฐาน</option>
+             <option value="เพิ่มเติม">เฉพาะวิชาเพิ่มเติม</option>
+           </select>
 
           <button 
-             onClick={handleExportExcel}
-             disabled={data.length === 0}
-             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-95 shadow-sm shadow-emerald-600/20 disabled:opacity-50 disabled:pointer-events-none group"
-          >
-            <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
-            ดาวน์โหลด Excel
-          </button>
+              onClick={handleExportExcel}
+              disabled={data.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-95 shadow-sm shadow-emerald-600/20 disabled:opacity-50 disabled:pointer-events-none group"
+           >
+             <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+             ดาวน์โหลด Excel
+           </button>
         </div>
       </div>
 
@@ -270,8 +325,33 @@ export default function DashboardPage() {
            <h3 className="font-bold text-lg text-slate-700">ไม่พบข้อมูล</h3>
            <p className="text-slate-500">ยังไม่มีการนำเข้าไฟล์ Excel ในปีการศึกษาและเทอมที่คุณเลือก</p>
         </div>
+      ) : data.length > 0 && stats.totalSubjects === 0 ? (
+        <div className="py-20 flex flex-col items-center justify-center gap-4 bg-white rounded-3xl border border-slate-200 border-dashed animate-in fade-in zoom-in-95 duration-500">
+           <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-2">
+              <Search className="w-8 h-8" />
+           </div>
+           <h3 className="font-bold text-lg text-slate-700">ไม่พบข้อมูลตรงตามเงื่อนไข</h3>
+           <p className="text-slate-500">ลองเปลี่ยนตัวกรอง ระดับชั้น หรือ ประเภทวิชา ดูค่ะ/ครับ</p>
+        </div>
       ) : (
         <div className="space-y-6 animate-in fade-in duration-700">
+          {/* Active Filter Badges */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-500">กำลังกรอง:</span>
+            {gradeFilter !== "all" && (
+              <span className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-bold">
+                {gradeFilter === "lower" ? "ม.ต้น (ม.1-3)" : gradeFilter === "upper" ? "ม.ปลาย (ม.4-6)" : gradeFilter}
+              </span>
+            )}
+            {subjectType !== "all" && (
+              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">{subjectType}</span>
+            )}
+            {gradeFilter === "all" && subjectType === "all" && (
+              <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">แสดงทั้งหมด</span>
+            )}
+            <span className="text-xs font-medium text-slate-400 ml-2">{stats.totalSubjects} รายวิชา</span>
+          </div>
+
           {/* Executive Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
