@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   
   const [year, setYear] = useState<number>(2568);
-  const [term, setTerm] = useState<string>("สรุปชิ้นงาน");
+  const [term, setTerm] = useState<string>("สรุปสองภาคเรียน");
   const [subjectType, setSubjectType] = useState<string>("all");
   
   const [data, setData] = useState<AcademicData[]>([]);
@@ -231,7 +231,7 @@ export default function DashboardPage() {
                onChange={(e) => setTerm(e.target.value)}
                className="pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none appearance-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors min-w-[120px]"
             >
-              <option value="สรุปชิ้นงาน">รวมทั้งปี</option>
+              <option value="สรุปสองภาคเรียน">สรุปสองภาคเรียน</option>
               <option value="1">ภาคเรียนที่ 1</option>
               <option value="2">ภาคเรียนที่ 2</option>
             </select>
@@ -396,6 +396,78 @@ export default function DashboardPage() {
             </div>
 
           </div>
+
+          {/* GPA Breakdown Table by Learning Area */}
+          {chartData.radarData.length > 0 && (
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <Award className="w-5 h-5 text-amber-500" />
+                สรุป GPA เฉลี่ยรายกลุ่มสาระการเรียนรู้ (เรียงจากมากไปน้อย)
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-slate-200">
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-10">อันดับ</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">กลุ่มสาระการเรียนรู้</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">GPA เฉลี่ย</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider" style={{minWidth: '300px'}}>สัดส่วน GPA (เทียบ 4.00)</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">ระดับ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {[...chartData.radarData]
+                      .sort((a, b) => b.GPA - a.GPA)
+                      .map((item, idx) => {
+                        const pct = (item.GPA / 4) * 100;
+                        const rank = idx + 1;
+                        let levelBadge = { text: 'ปรับปรุง', bg: 'bg-red-100', color: 'text-red-700' };
+                        if (item.GPA >= 3.5) levelBadge = { text: 'ดีเยี่ยม', bg: 'bg-emerald-100', color: 'text-emerald-700' };
+                        else if (item.GPA >= 3.0) levelBadge = { text: 'ดีมาก', bg: 'bg-blue-100', color: 'text-blue-700' };
+                        else if (item.GPA >= 2.5) levelBadge = { text: 'ดี', bg: 'bg-cyan-100', color: 'text-cyan-700' };
+                        else if (item.GPA >= 2.0) levelBadge = { text: 'พอใช้', bg: 'bg-amber-100', color: 'text-amber-700' };
+                        else if (item.GPA >= 1.0) levelBadge = { text: 'ผ่านเกณฑ์', bg: 'bg-orange-100', color: 'text-orange-700' };
+
+                        let barColor = 'bg-emerald-500';
+                        if (item.GPA < 1.0) barColor = 'bg-red-500';
+                        else if (item.GPA < 2.0) barColor = 'bg-orange-500';
+                        else if (item.GPA < 2.5) barColor = 'bg-amber-500';
+                        else if (item.GPA < 3.0) barColor = 'bg-cyan-500';
+                        else if (item.GPA < 3.5) barColor = 'bg-blue-500';
+
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="px-4 py-4 text-center">
+                              <span className={`inline-flex w-7 h-7 rounded-full items-center justify-center text-xs font-black ${
+                                rank === 1 ? 'bg-amber-400 text-white shadow-md shadow-amber-400/30' :
+                                rank === 2 ? 'bg-slate-300 text-white' :
+                                rank === 3 ? 'bg-amber-600 text-white' :
+                                'bg-slate-100 text-slate-500'
+                              }`}>{rank}</span>
+                            </td>
+                            <td className="px-4 py-4 text-sm font-semibold text-slate-800">{item.subject}</td>
+                            <td className="px-4 py-4 text-center">
+                              <span className="text-xl font-black text-slate-900">{item.GPA.toFixed(2)}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+                                  <div className={`h-3 rounded-full ${barColor} transition-all duration-1000`} style={{width: `${pct}%`}} />
+                                </div>
+                                <span className="text-xs font-bold text-slate-500 w-12 text-right">{pct.toFixed(0)}%</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold ${levelBadge.bg} ${levelBadge.color}`}>{levelBadge.text}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
