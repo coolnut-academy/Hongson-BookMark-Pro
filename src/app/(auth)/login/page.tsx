@@ -81,8 +81,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-4">
       <div className="w-full max-w-md bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40">
         <div className="p-8 pb-6 bg-gradient-to-r from-indigo-600 to-blue-600">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-inner mx-auto">
-            <KeyRound className="w-8 h-8 text-white" />
+          <div className="w-20 h-20 bg-white shadow-xl shadow-black/10 rounded-[28px] overflow-hidden flex items-center justify-center mb-6 mx-auto p-1.5 border-4 border-white/40">
+            <img src="/Logo.png" alt="BookMark Pro Logo" className="w-full h-full object-cover rounded-2xl" />
           </div>
           <h1 className="text-3xl font-bold text-center text-white mb-2">BookMark Pro</h1>
           <p className="text-indigo-100 text-center text-sm font-medium">เข้าสู่ระบบด้วยบัญชีองค์กร</p>

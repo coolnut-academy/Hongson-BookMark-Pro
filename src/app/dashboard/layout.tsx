@@ -59,8 +59,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-72 bg-white border-r border-slate-200 backdrop-blur-3xl sticky top-0 h-screen z-20 transition-all">
         <div className="p-6 border-b border-slate-100 flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md shadow-indigo-600/20">
-            <GraduationCap className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md shadow-indigo-600/10 bg-white">
+            <img src="/Logo.png" alt="BookMark Pro Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">BookMark Pro</h1>
@@ -107,8 +107,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Header overlay */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-lg border-b border-slate-200 z-30 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center">
-            <GraduationCap className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center p-0.5">
+            <img src="/Logo.png" alt="BookMark Pro Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-base font-bold text-slate-900">BookMark Pro</h1>
         </div>
