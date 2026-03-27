@@ -87,14 +87,25 @@ def handle_upload():
                     if digits_only[2] == '2': return "เพิ่มเติม"
             return "ไม่ระบุ"
 
+        def fix_thai_encoding(text):
+            if not isinstance(text, str):
+                return text
+            try:
+                return text.encode('latin1').decode('windows-874')
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                return text
+
         for _, row in df.iterrows():
-            code = str(row.get('code', '')).strip()
-            if not code or str(code).lower() == 'nan':
+            raw_code = str(row.get('code', '')).strip()
+            if not raw_code or str(raw_code).lower() == 'nan':
                  continue
+            
+            code = fix_thai_encoding(raw_code)
+            titles = fix_thai_encoding(str(row.get('titles', '')).strip())
                  
             subject = {
                 "code": code,
-                "subject_name": str(row.get('titles', '')).strip(),
+                "subject_name": titles,
                 "credits": float(row.get('credits', 0)) if pd.notnull(row.get('credits')) else 0.0,
                 "type": get_subject_type(code),
                 "learning_area": get_learning_area(code),
