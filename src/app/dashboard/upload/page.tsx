@@ -20,7 +20,7 @@ export default function UploadPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [year, setYear] = useState<string>("2568");
-  const [term, setTerm] = useState<string>("1");
+  const [term, setTerm] = useState<string>("สรุปชิ้นงาน");
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -170,9 +170,9 @@ export default function UploadPage() {
              onChange={(e) => setTerm(e.target.value)}
              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-medium"
            >
+             <option value="สรุปชิ้นงาน">สรุปชิ้นงาน/ทั้งปี</option>
              <option value="1">ภาคเรียนที่ 1</option>
              <option value="2">ภาคเรียนที่ 2</option>
-             <option value="สรุปชิ้นงาน">สรุปชิ้นงาน/ทั้งปี</option>
            </select>
          </div>
       </div>

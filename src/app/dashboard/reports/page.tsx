@@ -26,7 +26,7 @@ export default function ReportsPage() {
   const { user } = useAuth();
   
   const [year, setYear] = useState<number>(2568);
-  const [term, setTerm] = useState<string>("1");
+  const [term, setTerm] = useState<string>("สรุปชิ้นงาน");
   
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,9 +124,9 @@ export default function ReportsPage() {
                onChange={(e) => setTerm(e.target.value)}
                className="pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 outline-none appearance-none cursor-pointer shadow-sm hover:border-teal-300 transition-colors min-w-[120px]"
             >
-              <option value="1">ภาคเรียน ท่ี่ 1</option>
-              <option value="2">ภาคเรียน ที่ 2</option>
               <option value="สรุปชิ้นงาน">รวมทั้งปี</option>
+              <option value="1">ภาคเรียนที่ 1</option>
+              <option value="2">ภาคเรียนที่ 2</option>
             </select>
           </div>
           <button 

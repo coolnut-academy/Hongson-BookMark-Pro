@@ -91,7 +91,7 @@ def handle_upload():
             if not isinstance(text, str):
                 return text
             try:
-                return text.encode('latin1').decode('windows-874')
+                return text.encode('latin1').decode('cp874')
             except (UnicodeEncodeError, UnicodeDecodeError):
                 return text
 
