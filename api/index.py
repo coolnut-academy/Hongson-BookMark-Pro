@@ -52,14 +52,68 @@ def handle_upload():
         log(f"Columns found: {columns}")
         
         log("[5/6] Parsing strategy proposal")
-        log("Proceeding with header=0 using xlrd engine.")
+        log("Proceeding with header=0, converting column names to lowercase")
+        df.columns = [str(col).strip().lower() for col in df.columns]
 
         log("[6/6] Final data extraction")
-        # Here we would map the row data into the subjects format
-        # e.g., code, subject_name, grades_count
-        # We will mock the parsed_subjects as we don't know the exact internal columns from the user's data yet
-        
         parsed_subjects = []
+
+        def get_learning_area(code):
+            c = str(code).strip()
+            if not c: return "อื่นๆ"
+            first_char = c[0]
+            mapped = {
+                "ท": "ภาษาไทย",
+                "ค": "คณิตศาสตร์",
+                "ว": "วิทยาศาสตร์และเทคโนโลยี",
+                "ส": "สังคมศึกษาศาสนาและวัฒนธรรม",
+                "พ": "สุขศึกษาและพลศึกษา",
+                "ศ": "ศิลปะ",
+                "ง": "การงานอาชีพ",
+                "อ": "ภาษาต่างประเทศ",
+                "จ": "ภาษาต่างประเทศ",
+                "ญ": "ภาษาต่างประเทศ",
+                "ก": "กิจกรรมพัฒนาผู้เรียน",
+                "I": "การศึกษาค้นคว้าด้วยตนเอง (IS)"
+            }
+            return mapped.get(first_char, "อื่นๆ")
+            
+        def get_subject_type(code):
+            c = str(code).strip()
+            if len(c) >= 4 and any(char.isdigit() for char in c):
+                digits_only = "".join([ch for ch in c if ch.isdigit()])
+                if len(digits_only) >= 3:
+                    if digits_only[2] == '1': return "พื้นฐาน"
+                    if digits_only[2] == '2': return "เพิ่มเติม"
+            return "ไม่ระบุ"
+
+        for _, row in df.iterrows():
+            code = str(row.get('code', '')).strip()
+            if not code or str(code).lower() == 'nan':
+                 continue
+                 
+            subject = {
+                "code": code,
+                "subject_name": str(row.get('titles', '')).strip(),
+                "credits": float(row.get('credits', 0)) if pd.notnull(row.get('credits')) else 0.0,
+                "type": get_subject_type(code),
+                "learning_area": get_learning_area(code),
+                "total_students": int(row.get('tgrade_t', 0)) if pd.notnull(row.get('tgrade_t')) else 0,
+                "gpa": float(row.get('gaverage', 0)) if pd.notnull(row.get('gaverage')) else 0.0,
+                "grades_count": {
+                    "0": int(row.get('tgrade_0', 0)) if pd.notnull(row.get('tgrade_0')) else 0,
+                    "1": int(row.get('tgrade_1', 0)) if pd.notnull(row.get('tgrade_1')) else 0,
+                    "1.5": int(row.get('tgrade_15', 0)) if pd.notnull(row.get('tgrade_15')) else 0,
+                    "2": int(row.get('tgrade_2', 0)) if pd.notnull(row.get('tgrade_2')) else 0,
+                    "2.5": int(row.get('tgrade_25', 0)) if pd.notnull(row.get('tgrade_25')) else 0,
+                    "3": int(row.get('tgrade_3', 0)) if pd.notnull(row.get('tgrade_3')) else 0,
+                    "3.5": int(row.get('tgrade_35', 0)) if pd.notnull(row.get('tgrade_35')) else 0,
+                    "4": int(row.get('tgrade_4', 0)) if pd.notnull(row.get('tgrade_4')) else 0,
+                    "r": int(row.get('tgrade_r', 0)) if pd.notnull(row.get('tgrade_r')) else 0,
+                    "x": int(row.get('tgrade_x', 0)) if pd.notnull(row.get('tgrade_x')) else 0,
+                }
+            }
+            parsed_subjects.append(subject)
         
         summary = {
             "filename": file.filename,
@@ -67,6 +121,7 @@ def handle_upload():
             "sheets_count": len(sheet_names),
             "sheets": sheet_names,
             "shape": list(df.shape),
+            "total_subjects_parsed": len(parsed_subjects)
         }
 
         return jsonify({

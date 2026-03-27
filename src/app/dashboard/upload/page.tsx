@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { UploadCloud, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, Calendar, BookOpen } from "lucide-react";
 import { clsx } from "clsx";
+import { db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -17,6 +19,8 @@ interface FileItem {
 export default function UploadPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [year, setYear] = useState<string>("2568");
+  const [term, setTerm] = useState<string>("1");
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -56,8 +60,12 @@ export default function UploadPage() {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
+  const inferGradeLevel = (filename: string) => {
+    const match = filename.match(/ม\.[1-6]/);
+    return match ? match[0] : "อื่นๆ";
+  };
+
   const uploadFiles = async () => {
-    // Determine which files to upload
     const toUpload = files.filter((f) => f.status === "idle" || f.status === "error");
     if (toUpload.length === 0) return;
 
@@ -77,14 +85,37 @@ export default function UploadPage() {
 
         const data = await res.json();
 
+        if (!res.ok) {
+           throw new Error(data.message || "Failed to parse file");
+        }
+
+        setFiles((prev) =>
+          prev.map((f) => (f.id === item.id ? { ...f, progress: 60, message: "กำลังบันทึกลงฐานข้อมูล..." } : f))
+        );
+
+        // Save to Firestore
+        const extractedData = data.extracted_data || [];
+        const gradeLevel = inferGradeLevel(item.file.name);
+        
+        // Use custom document ID for easy querying and upsert
+        const docId = `Y${year}_T${term}_${gradeLevel.replace('.', '')}`;
+        
+        await setDoc(doc(db, "academic_data", docId), {
+          year: parseInt(year),
+          term,
+          grade_level: gradeLevel,
+          subjects: extractedData,
+          updated_at: new Date().toISOString()
+        }, { merge: true });
+
         setFiles((prev) =>
           prev.map((f) =>
             f.id === item.id
               ? {
                   ...f,
-                  status: res.ok ? "success" : "error",
+                  status: "success",
                   progress: 100,
-                  message: res.ok ? "วิเคราะห์ข้อมูลสำเร็จแล้ว" : data.message || "เกิดข้อผิดพลาดในการประมวลผล",
+                  message: `บันทึกข้อมูล ${extractedData.length} รายวิชา สำเร็จ`,
                 }
               : f
           )
@@ -92,7 +123,7 @@ export default function UploadPage() {
       } catch (error: any) {
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === item.id ? { ...f, status: "error", progress: 0, message: "Server Error: ไม่สามารถเชื่อมต่อ API ได้" } : f
+            f.id === item.id ? { ...f, status: "error", progress: 0, message: error.message || "Server Error" } : f
           )
         );
       }
@@ -108,11 +139,45 @@ export default function UploadPage() {
           นำเข้าไฟล์สถิติ (Excel)
         </h1>
         <p className="text-slate-500 font-medium pb-6 border-b border-slate-200">
-          อัปโหลดไฟล์คะแนนแบบเก่า (.xls) ระบบจะสกัดข้อมูลด้วยระบบ Defensive Parsing เพื่อความถูกต้อง
+          อัปโหลดไฟล์คะแนน (.xls) เพื่อประมวลผลและจัดเก็บเข้าสู่ฐานข้อมูลกลางสำหรับแสดงสถิติ
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
+      {/* Upload Settings Panel */}
+      <div className="bg-white rounded-3xl border border-slate-100 p-6 flex items-end gap-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-6">
+         <div className="flex-1 space-y-2">
+           <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-indigo-500" />
+              ปีการศึกษา
+           </label>
+           <select 
+             value={year}
+             onChange={(e) => setYear(e.target.value)}
+             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"
+           >
+             <option value="2568">2568</option>
+             <option value="2567">2567</option>
+             <option value="2566">2566</option>
+           </select>
+         </div>
+         <div className="flex-1 space-y-2">
+           <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-emerald-500" />
+              ภาคเรียน
+           </label>
+           <select 
+             value={term}
+             onChange={(e) => setTerm(e.target.value)}
+             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-medium"
+           >
+             <option value="1">ภาคเรียนที่ 1</option>
+             <option value="2">ภาคเรียนที่ 2</option>
+             <option value="สรุปชิ้นงาน">สรุปชิ้นงาน/ทั้งปี</option>
+           </select>
+         </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-2">
         {/* Dropzone */}
         <div className="space-y-4">
           <div
@@ -130,8 +195,8 @@ export default function UploadPage() {
               <UploadCloud className="w-10 h-10" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">ลากไฟล์มาวางที่นี่</h3>
-            <p className="text-slate-500 text-sm font-medium mb-8 max-w-[250px]">
-              หรืองคลิกปุ่มด้านล่างเพื่อเลือกไฟล์จากคอมพิวเตอร์ (รับเฉพาะ .xls 97-2003)
+            <p className="text-slate-500 text-sm font-medium mb-8 max-w-[250px] mx-auto leading-relaxed">
+              คลิกปุ่มด้านล่างหรือลากไฟล์ .xls 97-2003 (เช่น ม.1.xls, ม.2.xls) มาวางได้เลย
             </p>
 
             <input
@@ -195,7 +260,7 @@ export default function UploadPage() {
                          </div>
                        )}
                        {item.status !== "uploading" && (
-                         <p className="text-xs font-medium text-slate-500">{item.message || `${(item.file.size / 1024).toFixed(1)} KB`}</p>
+                         <p className="text-xs font-medium text-slate-500">{item.message || inferGradeLevel(item.file.name)}</p>
                        )}
                     </div>
                   </div>
@@ -219,9 +284,9 @@ export default function UploadPage() {
             className="mt-auto w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
           >
             {isUploading ? (
-               <><Loader2 className="w-5 h-5 animate-spin" /> กำลังประมวลผล...</>
+               <><Loader2 className="w-5 h-5 animate-spin" /> กำลังบันทึกข้อมูล...</>
             ) : (
-              <><UploadCloud className="w-5 h-5" /> นำเข้าข้อมูลเข้าสู่ระบบ</>
+              <><UploadCloud className="w-5 h-5" /> ยืนยันการอัปโหลดเข้าฐานข้อมูล</>
             )}
           </button>
         </div>

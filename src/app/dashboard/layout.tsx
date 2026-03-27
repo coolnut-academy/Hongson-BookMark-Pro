@@ -19,16 +19,16 @@ import Link from "next/link";
 import { clsx } from "clsx";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && (!user || userRole !== "admin")) {
       router.push("/login");
     }
-  }, [user, loading, router]);
+  }, [user, userRole, loading, router]);
 
   if (loading || !user) {
     return (
