@@ -28,7 +28,6 @@ export default function LoginPage() {
       await signInWithPopup(auth, provider);
     } catch (err: any) {
       console.error("Login popup error:", err);
-      // ถอยรหัส error ไปโชว์บนหน้าจอให้เราทราบว่าผิดพลาดตรงไหน
       const errorCode = err.code || "unknown";
       if (errorCode === "auth/popup-closed-by-user") {
          setError("คุณปิดหน้าต่างการล็อกอินก่อนจะเสร็จสิ้น");
@@ -46,8 +45,8 @@ export default function LoginPage() {
 
   if (contextLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
       </div>
     );
   }
@@ -55,14 +54,14 @@ export default function LoginPage() {
   // Pending Approval State
   if (user && userRole !== "admin") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-4">
-        <div className="w-full max-w-md bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40 p-10 text-center">
-          <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6 mx-auto shadow-inner">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-green-50 p-4">
+        <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-emerald-100/60 p-10 text-center">
+          <div className="w-20 h-20 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mb-6 mx-auto shadow-inner border border-amber-100">
             <Lock className="w-10 h-10" />
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-4">รอการอนุมัติการเข้าระบบ</h1>
           <p className="text-slate-600 font-medium leading-relaxed mb-8">
-            บัญชี <span className="text-indigo-600 font-bold">{user.email}</span> เข้าสู่ระบบสำเร็จแล้ว แต่คุณยังไม่ได้รับสิทธิ์ (Role) ระดับ Admin <br/><br/>
+            บัญชี <span className="text-emerald-700 font-bold">{user.email}</span> เข้าสู่ระบบสำเร็จแล้ว แต่คุณยังไม่ได้รับสิทธิ์ (Role) ระดับ Admin <br/><br/>
             กรุณาติดต่อผู้ดูแลระบบเพื่อปรับสถานะใน Firebase ให้เป็น Admin ก่อนเข้าใช้งาน
           </p>
           <button
@@ -78,14 +77,14 @@ export default function LoginPage() {
 
   // Normal Login State
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-4">
-      <div className="w-full max-w-md bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40">
-        <div className="p-8 pb-6 bg-gradient-to-r from-indigo-600 to-blue-600">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-emerald-50 via-stone-50 to-green-50 p-4">
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-emerald-100/60">
+        <div className="p-8 pb-6 bg-gradient-to-r from-emerald-700 to-green-600">
           <div className="w-20 h-20 bg-white shadow-xl shadow-black/10 rounded-[28px] overflow-hidden flex items-center justify-center mb-6 mx-auto p-1.5 border-4 border-white/40">
             <img src="/Logo.png" alt="BookMark Pro Logo" className="w-full h-full object-cover rounded-2xl" />
           </div>
           <h1 className="text-3xl font-bold text-center text-white mb-2">BookMark Pro</h1>
-          <p className="text-indigo-100 text-center text-sm font-medium">เข้าสู่ระบบด้วยบัญชีองค์กร</p>
+          <p className="text-emerald-100 text-center text-sm font-medium">ระบบวิเคราะห์ผลการเรียน โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ</p>
         </div>
 
         <div className="p-10 text-center space-y-6">
@@ -101,10 +100,10 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full bg-white border border-slate-200 hover:bg-slate-50 hover:border-indigo-300 text-slate-800 font-bold py-4 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-4 shadow-sm disabled:opacity-70 disabled:pointer-events-none"
+            className="w-full bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-800 font-bold py-4 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-4 shadow-sm disabled:opacity-70 disabled:pointer-events-none"
           >
             {loading ? (
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
             ) : (
               <>
                 <svg className="w-6 h-6" viewBox="0 0 24 24">
@@ -130,6 +129,11 @@ export default function LoginPage() {
             )}
           </button>
         </div>
+      </div>
+
+      {/* Developer Badge */}
+      <div className="mt-6 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full border border-emerald-100/60 shadow-sm">
+        <p className="text-xs font-medium text-slate-500 tracking-wide">พัฒนาโดย: <span className="font-bold text-emerald-700">นายสาธิต ศิริวัชน์</span></p>
       </div>
     </div>
   );

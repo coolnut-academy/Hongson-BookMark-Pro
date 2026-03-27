@@ -13,7 +13,8 @@ import {
   LogOut,
   Menu,
   X,
-  GraduationCap
+  GraduationCap,
+  Code2
 } from "lucide-react";
 import Link from "next/link";
 import { clsx } from "clsx";
@@ -32,8 +33,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
@@ -55,16 +56,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-stone-50 flex">
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex flex-col w-72 bg-white border-r border-slate-200 backdrop-blur-3xl sticky top-0 h-screen z-20 transition-all">
-        <div className="p-6 border-b border-slate-100 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md shadow-indigo-600/10 bg-white">
+      <aside className="hidden md:flex flex-col w-72 bg-white border-r border-emerald-100/60 sticky top-0 h-screen z-20 transition-all">
+        <div className="p-6 border-b border-emerald-50 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md shadow-emerald-600/10 bg-white border border-emerald-100/40">
             <img src="/Logo.png" alt="BookMark Pro Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">BookMark Pro</h1>
-            <p className="text-xs text-slate-500 font-medium tracking-wide">Hongson Academy</p>
+            <p className="text-xs text-emerald-600 font-semibold tracking-wide">Hongson Academy</p>
           </div>
         </div>
 
@@ -79,21 +80,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={clsx(
                   "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 group relative",
                   isActive
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "text-slate-600 hover:bg-stone-50 hover:text-slate-900"
                 )}
               >
                 {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-600 rounded-r-full" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-emerald-600 rounded-r-full" />
                 )}
-                <item.icon className={clsx("w-5 h-5 transition-transform group-hover:scale-110", isActive ? "text-indigo-600" : "text-slate-400 group-hover:text-indigo-600")} />
+                <item.icon className={clsx("w-5 h-5 transition-transform group-hover:scale-110", isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-emerald-600")} />
                 {item.name}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        {/* Developer Badge in sidebar */}
+        <div className="px-4 py-3 border-t border-emerald-50">
+          <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50/60 rounded-lg">
+            <Code2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <p className="text-[10px] font-medium text-slate-500 leading-tight">พัฒนาโดย: <span className="font-bold text-emerald-700">นายสาธิต ศิริวัชน์</span></p>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-emerald-50">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3.5 w-full rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200 group"
@@ -105,7 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Mobile Header overlay */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-lg border-b border-slate-200 z-30 flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-lg border-b border-emerald-100/60 z-30 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center p-0.5">
             <img src="/Logo.png" alt="BookMark Pro Logo" className="w-full h-full object-contain" />
@@ -114,7 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 -mr-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          className="p-2 -mr-2 text-slate-600 hover:bg-stone-100 rounded-lg transition-colors"
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -136,18 +145,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       className={clsx(
                         "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200",
                         isActive
-                          ? "bg-indigo-50 text-indigo-600"
-                          : "text-slate-600 hover:bg-slate-50"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "text-slate-600 hover:bg-stone-50"
                       )}
                     >
-                      <item.icon className={clsx("w-5 h-5", isActive ? "text-indigo-600" : "text-slate-400")} />
+                      <item.icon className={clsx("w-5 h-5", isActive ? "text-emerald-600" : "text-slate-400")} />
                       {item.name}
                     </Link>
                   );
                 })}
               </nav>
 
-              <div className="px-4 mt-auto pt-6 border-t border-slate-100">
+              {/* Mobile Developer Badge */}
+              <div className="px-4 py-3 border-t border-emerald-50">
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50/60 rounded-lg">
+                  <Code2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <p className="text-[10px] font-medium text-slate-500">พัฒนาโดย: <span className="font-bold text-emerald-700">นายสาธิต ศิริวัชน์</span></p>
+                </div>
+              </div>
+
+              <div className="px-4 mt-auto pt-6 border-t border-emerald-50">
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-3 px-4 py-3.5 w-full rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
