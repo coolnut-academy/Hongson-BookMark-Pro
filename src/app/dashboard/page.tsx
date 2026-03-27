@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState, useMemo } from "react";
 import { 
-  Users, TrendingUp, BookOpen, Award, BarChart, Calendar, Filter, ArrowUpRight, ArrowDownRight, Loader2, Search
+  Users, TrendingUp, BookOpen, Award, BarChart, Calendar, Filter, ArrowUpRight, ArrowDownRight, Loader2, Search, Download
 } from "lucide-react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -11,7 +11,6 @@ import {
   BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
-import { clsx } from "clsx";
 
 interface GradeCount {
   "0": number; "1": number; "1.5": number; "2": number; "2.5": number; 
@@ -161,8 +160,51 @@ export default function DashboardPage() {
      return { barData, radarData };
   }, [data, subjectType]);
 
+  const handleExportExcel = () => {
+    import('xlsx').then(XLSX => {
+      const rows: any[] = [];
+      data.forEach(d => {
+        d.subjects.forEach(sub => {
+           if (subjectType !== "all" && sub.type !== subjectType) return;
+           const gc = sub.grades_count;
+           rows.push({
+             "ปีการศึกษา": d.year,
+             "ภาคเรียน": d.term,
+             "ระดับชั้น": d.grade_level,
+             "กลุ่มสาระ": sub.learning_area || "ไม่ระบุ",
+             "ประเภทวิชา": sub.type,
+             "รหัสวิชา": sub.code,
+             "ชื่อวิชา": sub.subject_name,
+             "หน่วยกิต": sub.credits,
+             "นักเรียนทั้งหมด": sub.total_students,
+             "เกรดเฉลี่ย (GPA)": sub.gpa,
+             "เกรด 4": gc["4"] || 0,
+             "เกรด 3.5": gc["3.5"] || 0,
+             "เกรด 3": gc["3"] || 0,
+             "เกรด 2.5": gc["2.5"] || 0,
+             "เกรด 2": gc["2"] || 0,
+             "เกรด 1.5": gc["1.5"] || 0,
+             "เกรด 1": gc["1"] || 0,
+             "เกรด 0": gc["0"] || 0,
+             "ร": gc["r"] || 0,
+             "มส": gc["x"] || 0,
+           });
+        });
+      });
+      
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      // Auto-fit columns
+      const cols = [{wch: 10}, {wch: 10}, {wch: 15}, {wch: 25}, {wch: 15}, {wch: 15}, {wch: 35}, {wch: 10}, {wch: 15}, {wch: 15}];
+      worksheet['!cols'] = cols;
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Academic Stats");
+      XLSX.writeFile(workbook, `สรุปผลการเรียน_${year}_ภาค${term}.xlsx`);
+    });
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-gray-200">
         <div>
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-blue-600 tracking-tight mb-2">
@@ -176,7 +218,7 @@ export default function DashboardPage() {
             <select 
                value={year}
                onChange={(e) => setYear(Number(e.target.value))}
-               className="pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none appearance-none cursor-pointer shadow-sm min-w-[120px]"
+               className="pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none appearance-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors min-w-[120px]"
             >
               <option value="2568">ปีการศึกษา 2568</option>
               <option value="2567">ปีการศึกษา 2567</option>
@@ -187,7 +229,7 @@ export default function DashboardPage() {
             <select 
                value={term}
                onChange={(e) => setTerm(e.target.value)}
-               className="pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none appearance-none cursor-pointer shadow-sm min-w-[120px]"
+               className="pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none appearance-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors min-w-[120px]"
             >
               <option value="1">ภาคเรียน ท่ี่ 1</option>
               <option value="2">ภาคเรียน ที่ 2</option>
@@ -197,22 +239,31 @@ export default function DashboardPage() {
           <select 
              value={subjectType}
              onChange={(e) => setSubjectType(e.target.value)}
-             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none cursor-pointer shadow-sm"
+             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors"
           >
             <option value="all">ทุกประเภทวิชา</option>
             <option value="พื้นฐาน">เฉพาะวิชาพื้นฐาน</option>
             <option value="เพิ่มเติม">เฉพาะวิชาเพิ่มเติม</option>
           </select>
+
+          <button 
+             onClick={handleExportExcel}
+             disabled={data.length === 0}
+             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-95 shadow-sm shadow-emerald-600/20 disabled:opacity-50 disabled:pointer-events-none group"
+          >
+            <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+            ดาวน์โหลด Excel
+          </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-4 text-indigo-500">
+        <div className="py-20 flex flex-col items-center justify-center gap-4 text-indigo-500 animate-in fade-in duration-500">
            <Loader2 className="w-10 h-10 animate-spin" />
            <p className="font-semibold text-slate-600 animate-pulse">กำลังดึงข้อมูลสถิติ...</p>
         </div>
       ) : data.length === 0 ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-4 bg-white rounded-3xl border border-slate-200 border-dashed">
+        <div className="py-20 flex flex-col items-center justify-center gap-4 bg-white rounded-3xl border border-slate-200 border-dashed animate-in fade-in zoom-in-95 duration-500">
            <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-2">
               <Search className="w-8 h-8" />
            </div>
@@ -220,7 +271,7 @@ export default function DashboardPage() {
            <p className="text-slate-500">ยังไม่มีการนำเข้าไฟล์ Excel ในปีการศึกษาและเทอมที่คุณเลือก</p>
         </div>
       ) : (
-        <>
+        <div className="space-y-6 animate-in fade-in duration-700">
           {/* Executive Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -253,7 +304,7 @@ export default function DashboardPage() {
                 bg: "bg-purple-50"
               }
             ].map((stat, i) => (
-              <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 group">
+              <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 group hover:-translate-y-1">
                 <div className="flex justify-between items-start mb-4">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
                     <stat.icon className="w-6 h-6" />
@@ -270,10 +321,10 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pt-2">
             
             {/* Stacked Bar Chart */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col h-[460px]">
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col h-[460px] group hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500">
               <div className="mb-6 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <BarChart className="w-5 h-5 text-indigo-500" />
+                  <BarChart className="w-5 h-5 text-indigo-500 group-hover:rotate-12 transition-transform duration-300" />
                   สัดส่วนผลการเรียน แยกตามกลุ่มสาระ
                 </h3>
               </div>
@@ -302,20 +353,20 @@ export default function DashboardPage() {
                       contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)', fontWeight: 600 }}
                     />
                     <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '13px' }}/>
-                    <Bar dataKey="ดีเยี่ยม" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="ดี" stackId="a" fill="#3b82f6" />
-                    <Bar dataKey="ผ่าน" stackId="a" fill="#f59e0b" />
-                    <Bar dataKey="ไม่ผ่าน" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="ดีเยี่ยม" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} animationDuration={1500} />
+                    <Bar dataKey="ดี" stackId="a" fill="#3b82f6" animationDuration={1500} />
+                    <Bar dataKey="ผ่าน" stackId="a" fill="#f59e0b" animationDuration={1500} />
+                    <Bar dataKey="ไม่ผ่าน" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} animationDuration={1500} />
                   </RechartsBarChart>
                 </ResponsiveContainer>
               </div>
             </div>
             
             {/* Radar Chart */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col h-[460px]">
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col h-[460px] group hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500">
               <div className="mb-6 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-emerald-500" />
+                  <BookOpen className="w-5 h-5 text-emerald-500 group-hover:-rotate-12 transition-transform duration-300" />
                   สมรรถนะภาพรวมรายกลุ่มสาระ (GPA)
                 </h3>
               </div>
@@ -334,6 +385,7 @@ export default function DashboardPage() {
                       stroke="#4f46e5" 
                       fill="#6366f1" 
                       fillOpacity={0.4} 
+                      animationDuration={1500}
                     />
                     <Tooltip
                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
@@ -344,7 +396,7 @@ export default function DashboardPage() {
             </div>
 
           </div>
-        </>
+        </div>
       )}
     </div>
   );
