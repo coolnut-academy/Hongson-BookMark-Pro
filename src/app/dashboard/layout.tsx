@@ -1,0 +1,173 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import {
+  LayoutDashboard,
+  UploadCloud,
+  FileSpreadsheet,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  GraduationCap
+} from "lucide-react";
+import Link from "next/link";
+import { clsx } from "clsx";
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  const navItems = [
+    { name: "ภาพรวมสถิติ", href: "/dashboard", icon: LayoutDashboard },
+    { name: "นำเข้าคะแนน", href: "/dashboard/upload", icon: UploadCloud },
+    { name: "สรุปรายงาน", href: "/dashboard/reports", icon: FileSpreadsheet },
+    { name: "ตั้งค่าระบบ", href: "/dashboard/settings", icon: Settings },
+  ];
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar - Desktop */}
+      <aside className="hidden md:flex flex-col w-72 bg-white border-r border-slate-200 backdrop-blur-3xl sticky top-0 h-screen z-20 transition-all">
+        <div className="p-6 border-b border-slate-100 flex items-center gap-4">
+          <div className="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md shadow-indigo-600/20">
+            <GraduationCap className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">BookMark Pro</h1>
+            <p className="text-xs text-slate-500 font-medium tracking-wide">Hongson Academy</p>
+          </div>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest px-4 mb-4 mt-2">เมนูหลัก</div>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={clsx(
+                  "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 group relative",
+                  isActive
+                    ? "bg-indigo-50 text-indigo-600"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                )}
+              >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-600 rounded-r-full" />
+                )}
+                <item.icon className={clsx("w-5 h-5 transition-transform group-hover:scale-110", isActive ? "text-indigo-600" : "text-slate-400 group-hover:text-indigo-600")} />
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-slate-100">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3.5 w-full rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200 group"
+          >
+            <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-500 transition-colors" />
+            ออกจากระบบ
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile Header overlay */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-lg border-b border-slate-200 z-30 flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center">
+            <GraduationCap className="w-5 h-5" />
+          </div>
+          <h1 className="text-base font-bold text-slate-900">BookMark Pro</h1>
+        </div>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 -mr-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Mobile Menu Content */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-20 pt-16 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="absolute inset-y-0 right-0 w-3/4 max-w-sm bg-white shadow-2xl flex flex-col pt-4 pb-6 animate-in slide-in-from-right duration-300">
+             <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+                <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest px-4 mb-4 mt-2">เมนูหลัก</div>
+                {navItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={clsx(
+                        "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200",
+                        isActive
+                          ? "bg-indigo-50 text-indigo-600"
+                          : "text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                      <item.icon className={clsx("w-5 h-5", isActive ? "text-indigo-600" : "text-slate-400")} />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="px-4 mt-auto pt-6 border-t border-slate-100">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-4 py-3.5 w-full rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
+                >
+                  <LogOut className="w-5 h-5 text-red-400" />
+                  ออกจากระบบ
+                </button>
+              </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 pt-16 md:pt-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
